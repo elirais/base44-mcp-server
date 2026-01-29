@@ -1,0 +1,25 @@
+{
+  "name": "base44-mcp-server",
+  "version": "1.0.0",
+  "description": "MCP server exposing Base44 SDK documentation for AI agents",
+  "type": "module",
+  "module": "src/index.ts",
+  "scripts": {
+    "dev": "npx @smithery/cli dev",
+    "build": "npx @smithery/cli build",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.17.3",
+    "zod": "^4.0.0"
+  },
+  "devDependencies": {
+    "@smithery/cli": "^1.4.6",
+    "typescript": "^5.8.0",
+    "vitest": "^2.0.0"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}

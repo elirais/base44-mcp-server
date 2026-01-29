@@ -1,0 +1,114 @@
+# Base44 SDK Documentation MCP Server
+
+An MCP (Model Context Protocol) server that exposes Base44 SDK documentation to AI agents and coding assistants. Zero configuration required — no API keys, no credentials.
+
+## What it does
+
+This MCP server allows AI agents (Claude Desktop, Cursor, etc.) to look up Base44 SDK documentation while helping developers write code. It provides:
+
+- **3 Tools**: `lookup`, `search`, `list-topics`
+- **10 Resources**: One per documentation topic + full reference
+- **9 Documentation Topics**: entities, auth, integrations, connectors, functions, analytics, best-practices, project-structure, getting-started
+
+## Installation
+
+### Via Smithery (recommended)
+
+Install directly from [Smithery.ai](https://smithery.ai):
+
+```bash
+npx @smithery/cli install base44-mcp-server
+```
+
+### Manual (Claude Desktop)
+
+Add to your Claude Desktop config (`claude_desktop_config.json`):
+
+```json
+{
+  "mcpServers": {
+    "base44-docs": {
+      "command": "npx",
+      "args": ["@smithery/cli", "run", "base44-mcp-server"]
+    }
+  }
+}
+```
+
+## Tools
+
+### `lookup`
+Look up documentation for a specific topic or method.
+
+```
+lookup({ topic: "entities" })                    // Full entities docs
+lookup({ topic: "entities", method: "filter" })  // Just the filter method
+lookup({ topic: "integrations", method: "InvokeLLM" })
+```
+
+### `search`
+Full-text search across all documentation.
+
+```
+search({ query: "filter" })        // Find anything about filtering
+search({ query: "OAuth" })         // Find OAuth-related docs
+search({ query: "InvokeLLM" })     // Find LLM integration docs
+```
+
+### `list-topics`
+List all available documentation topics and their methods.
+
+```
+list-topics()
+```
+
+## Resources
+
+Each topic is available as an MCP resource at `base44://docs/{topic}`:
+
+- `base44://docs/entities`
+- `base44://docs/auth`
+- `base44://docs/integrations`
+- `base44://docs/connectors`
+- `base44://docs/functions`
+- `base44://docs/analytics`
+- `base44://docs/best-practices`
+- `base44://docs/project-structure`
+- `base44://docs/getting-started`
+- `base44://docs/full-reference` (all topics combined)
+
+## Development
+
+```bash
+# Install dependencies
+npm install
+
+# Run tests
+npm test
+
+# Run in dev mode (with MCP Inspector)
+npm run dev
+```
+
+## Architecture
+
+```
+src/
+├── index.ts              # Entry point — exports createServer()
+├── docs/
+│   ├── types.ts          # DocTopic, DocMethod, DocParameter interfaces
+│   ├── index.ts          # Barrel export of all docs
+│   ├── entities.ts       # Entity CRUD documentation
+│   ├── auth.ts           # Authentication documentation
+│   ├── integrations.ts   # Core integrations (LLM, email, files, images)
+│   ├── connectors.ts     # OAuth connectors (11 services)
+│   ├── functions.ts      # Backend Deno functions
+│   ├── analytics.ts      # Event tracking
+│   ├── best-practices.ts # Security, performance, error handling patterns
+│   ├── project-structure.ts # File organization and pre-installed packages
+│   └── getting-started.ts   # SDK setup and React Query patterns
+└── tools/
+    ├── lookup.ts         # Topic/method lookup logic
+    ├── search.ts         # Full-text search logic
+    └── list-topics.ts    # Topic listing logic
+```
