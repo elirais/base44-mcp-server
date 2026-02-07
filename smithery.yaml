@@ -1,8 +1,8 @@
 runtime: "typescript"
 version: "1.0.0"
-description: "Unofficial MCP server for Base44 SDK documentation. Community project - not officially maintained by Base44. May become outdated."
+description: "MCP server for Base44 SDK documentation - Community project"
 author: "Community Project"
-homepage: "https://github.com/yourusername/base44-sdk-mcp"
+homepage: "https://doc-sdk.base44.app"
 license: "MIT"
 
 # Categories for Smithery marketplace

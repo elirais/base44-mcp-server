@@ -4,6 +4,12 @@
 
 An MCP (Model Context Protocol) server that exposes Base44 SDK documentation to AI agents and coding assistants. Zero configuration required — no API keys, no credentials.
 
+## 📚 Documentation Website
+
+**Full documentation available at: [https://doc-sdk.base44.app](https://doc-sdk.base44.app)**
+
+Browse the complete Base44 SDK documentation with examples, guides, and API references.
+
 ## What it does
 
 This MCP server allows AI agents (Claude Desktop, Cursor, etc.) to look up Base44 SDK documentation while helping developers write code. It provides:
