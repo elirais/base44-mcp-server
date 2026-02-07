@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "description": "MCP server for Base44 SDK documentation - Community project",
   "type": "module",
-  "author": "Community Project",
+  "author": "Leonid Rise <https://www.linkedin.com/in/leonid-rise/>",
   "license": "MIT",
   "homepage": "https://doc-sdk.base44.app",
   "repository": {

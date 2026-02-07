@@ -133,6 +133,12 @@ This is a **community-maintained project** and is **not officially supported by 
 
 For the most up-to-date and accurate information, always refer to the official Base44 SDK documentation.
 
+## Author
+
+Created by **Leonid Rise**
+
+[![LinkedIn](https://img.shields.io/badge/LinkedIn-Connect-blue?style=flat&logo=linkedin)](https://www.linkedin.com/in/leonid-rise/)
+
 ## Contributing
 
 Contributions are welcome! If you notice outdated or incorrect documentation, please open an issue or submit a pull request.
