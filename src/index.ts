@@ -87,3 +87,9 @@ export function createServer() {
 
   return server;
 }
+
+
+// Default export for Smithery CLI
+export default function() {
+  return createServer();
+}

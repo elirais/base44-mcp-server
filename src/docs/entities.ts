@@ -255,11 +255,177 @@ unsubscribe();`,
         "Returns an unsubscribe function for cleanup",
       ],
     },
+    {
+      name: "Advanced Filtering",
+      signature: "filter(query: object): Promise<Array>",
+      description: "Use comparison operators for advanced queries",
+      parameters: [
+        {
+          name: "query",
+          type: "object",
+          optional: false,
+          description: "Query with comparison operators",
+        },
+      ],
+      returns: "Promise<Array> - Filtered results",
+      example: `import { base44 } from '@/api/base44Client';
+
+// Greater than / Less than
+const expensive = await base44.entities.Product.filter({
+  price: { $gte: 100 }
+});
+
+const recent = await base44.entities.Order.filter({
+  created_date: { $gte: '2024-01-01' }
+});
+
+// In / Not in
+const categories = await base44.entities.Product.filter({
+  category: { $in: ['electronics', 'computers'] }
+});
+
+const notDraft = await base44.entities.Post.filter({
+  status: { $nin: ['draft', 'archived'] }
+});
+
+// Regex pattern matching
+const searchResults = await base44.entities.User.filter({
+  email: { $regex: '@gmail.com$' }
+});
+
+// Multiple conditions (AND)
+const filtered = await base44.entities.Task.filter({
+  status: 'active',
+  priority: { $in: ['high', 'urgent'] },
+  created_date: { $gte: '2024-01-01' }
+});`,
+      notes: [
+        "Operators: $gt, $gte, $lt, $lte, $in, $nin, $regex",
+        "Multiple conditions are combined with AND logic",
+        "Use $regex for pattern matching (case-sensitive)",
+      ],
+    },
+    {
+      name: "Pagination",
+      signature: "Pagination Patterns",
+      description: "Efficiently paginate through large datasets",
+      parameters: [],
+      returns: "N/A - Pattern examples",
+      example: `import { base44 } from '@/api/base44Client';
+
+// Basic pagination
+const page1 = await base44.entities.Product.list('-created_date', 20);
+const page2 = await base44.entities.Product.filter(
+  { created_date: { $lt: page1[page1.length - 1].created_date } },
+  '-created_date',
+  20
+);
+
+// Cursor-based pagination helper
+async function paginateEntities(entityName, pageSize = 20) {
+  let allItems = [];
+  let lastItem = null;
+  
+  while (true) {
+    const query = lastItem
+      ? { created_date: { $lt: lastItem.created_date } }
+      : {};
+    
+    const items = await base44.entities[entityName].filter(
+      query,
+      '-created_date',
+      pageSize
+    );
+    
+    if (items.length === 0) break;
+    
+    allItems = allItems.concat(items);
+    lastItem = items[items.length - 1];
+    
+    if (items.length < pageSize) break;
+  }
+  
+  return allItems;
+}
+
+// Usage
+const allProducts = await paginateEntities('Product', 50);`,
+      notes: [
+        "Use cursor-based pagination for large datasets",
+        "Sort by created_date for consistent pagination",
+        "Limit page size to avoid performance issues",
+      ],
+    },
+    {
+      name: "Error Handling",
+      signature: "Handling Entity Operation Errors",
+      description: "Properly handle errors in entity operations",
+      parameters: [],
+      returns: "N/A - Pattern examples",
+      example: `import { base44 } from '@/api/base44Client';
+
+// Handle validation errors
+try {
+  await base44.entities.User.create({
+    email: 'invalid-email', // Will fail validation
+    name: 'John Doe'
+  });
+} catch (error) {
+  if (error.message.includes('validation')) {
+    console.error('Validation failed:', error.message);
+    // Show user-friendly error
+  }
+}
+
+// Handle not found
+try {
+  const items = await base44.entities.Todo.filter({ id: 'nonexistent' });
+  if (items.length === 0) {
+    throw new Error('Todo not found');
+  }
+} catch (error) {
+  console.error('Error:', error.message);
+}
+
+// Handle permission errors
+try {
+  await base44.entities.User.list(); // May fail if not admin
+} catch (error) {
+  if (error.message.includes('permission') || error.message.includes('403')) {
+    console.error('Access denied');
+  }
+}
+
+// Retry pattern for transient errors
+async function retryOperation(operation, maxRetries = 3) {
+  for (let i = 0; i < maxRetries; i++) {
+    try {
+      return await operation();
+    } catch (error) {
+      if (i === maxRetries - 1) throw error;
+      await new Promise(resolve => setTimeout(resolve, 1000 * Math.pow(2, i)));
+    }
+  }
+}
+
+// Usage
+const result = await retryOperation(() =>
+  base44.entities.Order.create({ total: 99.99 })
+);`,
+      notes: [
+        "Always wrap entity operations in try-catch",
+        "Check for specific error types (validation, permission, not found)",
+        "Implement retry logic for transient failures",
+        "Provide user-friendly error messages",
+      ],
+    },
   ],
   notes: [
     "Entity names are PascalCase (e.g., Todo, UserProfile)",
     "Built-in fields: id, created_date, updated_date, created_by",
     "Every entity automatically includes built-in fields - do not define them in your schema",
+    "Use comparison operators for advanced filtering",
+    "Always handle errors in entity operations",
   ],
 };
 

@@ -1,4 +1,6 @@
-# Base44 SDK Documentation MCP Server
+# Base44 SDK MCP Server (Unofficial)
+
+> ⚠️ **DISCLAIMER**: This is an **unofficial community project** and is **NOT officially maintained by Base44**. The documentation may become outdated or inaccurate. For official Base44 SDK documentation, please visit the official Base44 website.
 
 An MCP (Model Context Protocol) server that exposes Base44 SDK documentation to AI agents and coding assistants. Zero configuration required — no API keys, no credentials.
 
@@ -17,23 +19,25 @@ This MCP server allows AI agents (Claude Desktop, Cursor, etc.) to look up Base4
 Install directly from [Smithery.ai](https://smithery.ai):
 
 ```bash
-npx @smithery/cli install base44-mcp-server
+npx @smithery/cli install base44-sdk-mcp
 ```
 
 ### Manual (Claude Desktop)
 
-Add to your Claude Desktop config (`claude_desktop_config.json`):
+Add to your Claude Desktop config (`~/Library/Application Support/Claude/claude_desktop_config.json`):
 
 ```json
 {
   "mcpServers": {
     "base44-docs": {
       "command": "npx",
-      "args": ["@smithery/cli", "run", "base44-mcp-server"]
+      "args": ["-y", "@smithery/cli", "run", "base44-sdk-mcp"]
     }
   }
 }
 ```
+
+Then restart Claude Desktop.
 
 ## Tools
 
@@ -95,6 +99,7 @@ npm run dev
 ```
 src/
 ├── index.ts              # Entry point — exports createServer()
+├── stdio.ts              # stdio transport for Claude Desktop
 ├── docs/
 │   ├── types.ts          # DocTopic, DocMethod, DocParameter interfaces
 │   ├── index.ts          # Barrel export of all docs
@@ -112,3 +117,22 @@ src/
     ├── search.ts         # Full-text search logic
     └── list-topics.ts    # Topic listing logic
 ```
+
+## Disclaimer
+
+This is a **community-maintained project** and is **not officially supported by Base44**. The documentation provided may:
+- Become outdated as the Base44 SDK evolves
+- Contain inaccuracies or errors
+- Not reflect the latest SDK features
+
+For the most up-to-date and accurate information, always refer to the official Base44 SDK documentation.
+
+## Contributing
+
+Contributions are welcome! If you notice outdated or incorrect documentation, please open an issue or submit a pull request.
+
+## License
+
+MIT License - See LICENSE file for details.
+
+This project is not affiliated with, endorsed by, or sponsored by Base44.

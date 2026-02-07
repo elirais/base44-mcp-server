@@ -1,1 +1,65 @@
 runtime: "typescript"
+version: "1.0.0"
+description: "Unofficial MCP server for Base44 SDK documentation. Community project - not officially maintained by Base44. May become outdated."
+author: "Community Project"
+homepage: "https://github.com/yourusername/base44-sdk-mcp"
+license: "MIT"
+
+# Categories for Smithery marketplace
+categories:
+  - documentation
+  - sdk
+  - developer-tools
+
+# Keywords for discoverability
+keywords:
+  - base44
+  - sdk
+  - documentation
+  - api
+  - backend
+  - oauth
+  - analytics
+  - entities
+  - functions
+  - unofficial
+  - community
+
+# MCP capabilities
+capabilities:
+  tools:
+    - name: "lookup"
+      description: "Look up documentation for a specific topic or method"
+    - name: "search"
+      description: "Full-text search across all documentation"
+    - name: "list-topics"
+      description: "List all available documentation topics and methods"
+  
+  resources:
+    - uri: "base44://docs/entities"
+      description: "Entity CRUD operations documentation"
+    - uri: "base44://docs/auth"
+      description: "Authentication and authorization documentation"
+    - uri: "base44://docs/integrations"
+      description: "Core integrations (LLM, email, files, images)"
+    - uri: "base44://docs/connectors"
+      description: "OAuth connectors for 11 services"
+    - uri: "base44://docs/functions"
+      description: "Backend Deno functions documentation"
+    - uri: "base44://docs/analytics"
+      description: "Event tracking and analytics"
+    - uri: "base44://docs/best-practices"
+      description: "Security, performance, and error handling patterns"
+    - uri: "base44://docs/project-structure"
+      description: "File organization and pre-installed packages"
+    - uri: "base44://docs/getting-started"
+      description: "SDK setup and React Query patterns"
+    - uri: "base44://docs/full-reference"
+      description: "Complete documentation reference"
+
+# Requirements
+requirements:
+  node: ">=20.0.0"
+
+# No environment variables or configuration needed
+config: {}

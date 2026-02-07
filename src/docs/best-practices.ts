@@ -260,11 +260,252 @@ export default async function handler(req) {
 }`,
       notes: [],
     },
+    {
+      name: "Caching Strategies",
+      signature: "// React Query caching pattern",
+      description:
+        "Use React Query for efficient data caching and automatic background updates to reduce API calls and improve performance",
+      parameters: [],
+      returns: "N/A - This is a best practice pattern",
+      example: `import { base44 } from '@/api/base44Client';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+
+function ProductList() {
+  const queryClient = useQueryClient();
+
+  // Cache products with 5-minute stale time
+  const { data: products, isLoading } = useQuery({
+    queryKey: ['products'],
+    queryFn: () => base44.entities.Product.list(),
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    gcTime: 10 * 60 * 1000    // Keep in cache for 10 minutes
+  });
+
+  // Mutation with automatic cache update
+  const createProduct = useMutation({
+    mutationFn: (newProduct) => base44.entities.Product.create(newProduct),
+    onSuccess: () => {
+      // Invalidate and refetch products list
+      queryClient.invalidateQueries({ queryKey: ['products'] });
+    }
+  });
+
+  // Optimistic update for better UX
+  const updateProduct = useMutation({
+    mutationFn: ({ id, data }) => base44.entities.Product.update(id, data),
+    onMutate: async ({ id, data }) => {
+      // Cancel outgoing refetches
+      await queryClient.cancelQueries({ queryKey: ['products'] });
+      
+      // Snapshot previous value
+      const previous = queryClient.getQueryData(['products']);
+      
+      // Optimistically update cache
+      queryClient.setQueryData(['products'], (old) =>
+        old.map(p => p.id === id ? { ...p, ...data } : p)
+      );
+      
+      return { previous };
+    },
+    onError: (err, variables, context) => {
+      // Rollback on error
+      queryClient.setQueryData(['products'], context.previous);
+    }
+  });
+
+  return (
+    <div>
+      {isLoading ? <div>Loading...</div> : (
+        products.map(product => (
+          <ProductCard
+            key={product.id}
+            product={product}
+            onUpdate={(data) => updateProduct.mutate({ id: product.id, data })}
+          />
+        ))
+      )}
+    </div>
+  );
+}`,
+      notes: [
+        "Use staleTime to control how long data is considered fresh",
+        "Use gcTime (garbage collection time) to control cache retention",
+        "Invalidate queries after mutations to keep data in sync",
+        "Use optimistic updates for instant UI feedback",
+      ],
+    },
+    {
+      name: "Rate Limiting",
+      signature: "// Rate limiting pattern for backend functions",
+      description:
+        "Implement rate limiting in backend functions to prevent abuse and protect your application from excessive requests",
+      parameters: [],
+      returns: "N/A - This is a best practice pattern",
+      example: `import { base44 } from '@/api/base44Client';
+
+// Simple in-memory rate limiter (for single-instance functions)
+const rateLimits = new Map();
+
+function checkRateLimit(identifier, maxRequests = 10, windowMs = 60000) {
+  const now = Date.now();
+  const userLimits = rateLimits.get(identifier) || { count: 0, resetTime: now + windowMs };
+  
+  // Reset if window expired
+  if (now > userLimits.resetTime) {
+    userLimits.count = 0;
+    userLimits.resetTime = now + windowMs;
+  }
+  
+  userLimits.count++;
+  rateLimits.set(identifier, userLimits);
+  
+  return {
+    allowed: userLimits.count <= maxRequests,
+    remaining: Math.max(0, maxRequests - userLimits.count),
+    resetTime: userLimits.resetTime
+  };
+}
+
+export default async function handler(req) {
+  try {
+    const user = await base44.auth.me();
+    
+    // Rate limit by user email
+    const limit = checkRateLimit(user.email, 100, 60000); // 100 requests per minute
+    
+    if (!limit.allowed) {
+      return Response.json(
+        {
+          error: 'Rate limit exceeded',
+          retryAfter: Math.ceil((limit.resetTime - Date.now()) / 1000)
+        },
+        {
+          status: 429,
+          headers: {
+            'X-RateLimit-Remaining': '0',
+            'X-RateLimit-Reset': limit.resetTime.toString()
+          }
+        }
+      );
+    }
+    
+    // Process request
+    const result = await processRequest(req);
+    
+    return Response.json(result, {
+      headers: {
+        'X-RateLimit-Remaining': limit.remaining.toString(),
+        'X-RateLimit-Reset': limit.resetTime.toString()
+      }
+    });
+  } catch (error) {
+    console.error('Request failed:', error);
+    return Response.json({ error: 'Internal server error' }, { status: 500 });
+  }
+}`,
+      notes: [
+        "Use entity-based rate limiting for distributed systems",
+        "Return 429 status code with Retry-After header",
+        "Include rate limit info in response headers",
+        "Consider different limits for different user roles",
+      ],
+    },
+    {
+      name: "Testing Best Practices",
+      signature: "// Testing patterns for Base44 apps",
+      description:
+        "Patterns for testing Base44 applications including mocking SDK calls and testing React components",
+      parameters: [],
+      returns: "N/A - This is a best practice pattern",
+      example: `import { render, screen, waitFor } from '@testing-library/react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { vi } from 'vitest';
+import { base44 } from '@/api/base44Client';
+
+// Mock the Base44 SDK
+vi.mock('@/api/base44Client', () => ({
+  base44: {
+    entities: {
+      Product: {
+        list: vi.fn(),
+        create: vi.fn(),
+        update: vi.fn(),
+        delete: vi.fn()
+      }
+    },
+    auth: {
+      me: vi.fn()
+    }
+  }
+}));
+
+describe('ProductList', () => {
+  let queryClient;
+
+  beforeEach(() => {
+    queryClient = new QueryClient({
+      defaultOptions: {
+        queries: { retry: false },
+        mutations: { retry: false }
+      }
+    });
+    vi.clearAllMocks();
+  });
+
+  it('displays products from API', async () => {
+    // Mock API response
+    base44.entities.Product.list.mockResolvedValue([
+      { id: '1', name: 'Product 1', price: 100 },
+      { id: '2', name: 'Product 2', price: 200 }
+    ]);
+
+    render(
+      <QueryClientProvider client={queryClient}>
+        <ProductList />
+      </QueryClientProvider>
+    );
+
+    // Wait for products to load
+    await waitFor(() => {
+      expect(screen.getByText('Product 1')).toBeInTheDocument();
+      expect(screen.getByText('Product 2')).toBeInTheDocument();
+    });
+
+    // Verify API was called
+    expect(base44.entities.Product.list).toHaveBeenCalledTimes(1);
+  });
+
+  it('handles API errors gracefully', async () => {
+    // Mock API error
+    base44.entities.Product.list.mockRejectedValue(
+      new Error('Network error')
+    );
+
+    render(
+      <QueryClientProvider client={queryClient}>
+        <ProductList />
+      </QueryClientProvider>
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText(/error/i)).toBeInTheDocument();
+    });
+  });
+});`,
+      notes: [
+        "Mock the Base44 SDK for unit tests",
+        "Use React Testing Library for component tests",
+        "Test both success and error scenarios",
+        "Use QueryClient with retry: false for faster tests",
+      ],
+    },
   ],
   notes: [
     "Follow security best practices: validate inputs, check roles, verify webhooks",
-    "Optimize performance: use Promise.all, filter at database level",
+    "Optimize performance: use Promise.all, filter at database level, implement caching",
     "Handle errors gracefully with proper HTTP status codes",
+    "Implement rate limiting to prevent abuse",
+    "Write tests to ensure code quality and catch regressions",
   ],
 };
 

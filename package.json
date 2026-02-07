@@ -1,14 +1,46 @@
 {
-  "name": "base44-mcp-server",
+  "name": "base44-sdk-mcp",
   "version": "1.0.0",
-  "description": "MCP server exposing Base44 SDK documentation for AI agents",
+  "description": "Unofficial MCP server for Base44 SDK documentation - Community project, not officially maintained by Base44",
   "type": "module",
+  "author": "Community Project",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yourusername/base44-sdk-mcp.git"
+  },
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "base44",
+    "sdk",
+    "documentation",
+    "ai",
+    "claude",
+    "cursor",
+    "unofficial",
+    "community"
+  ],
+  "bin": {
+    "base44-mcp-server": "./build/stdio.js"
+  },
   "module": "src/index.ts",
+  "files": [
+    "src/",
+    "build/",
+    ".smithery/",
+    "README.md",
+    "INSTALLATION.md",
+    "TROUBLESHOOTING.md",
+    "SMITHERY_SUBMISSION.md"
+  ],
   "scripts": {
     "dev": "npx @smithery/cli dev",
     "build": "npx @smithery/cli build",
+    "build:stdio": "tsc && chmod +x build/stdio.js",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "prepublishOnly": "npm test && npm run build"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.17.3",

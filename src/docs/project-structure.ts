@@ -105,12 +105,117 @@ const projectStructureDocsData: Omit<DocTopic, "markdown"> = {
         "Use @tanstack/react-query for data fetching",
       ],
     },
+    {
+      name: "Environment Variables",
+      signature: "Environment Configuration",
+      description: "How to use environment variables and configuration in Base44 projects",
+      parameters: [],
+      returns: "N/A",
+      example: `// Access environment variables in frontend code
+import { appParams } from '@/lib/app-params';
+
+// Available environment variables:
+console.log(appParams.appId);        // Your Base44 app ID
+console.log(appParams.apiUrl);       // Base44 API endpoint
+console.log(appParams.environment);  // 'development' or 'production'
+
+// In backend functions (Deno):
+const apiKey = Deno.env.get('MY_API_KEY');
+const dbUrl = Deno.env.get('DATABASE_URL');
+
+// Set environment variables in Base44 dashboard:
+// Settings > Environment Variables > Add Variable`,
+      notes: [
+        "Frontend: Use appParams from @/lib/app-params",
+        "Backend: Use Deno.env.get() in functions",
+        "Never commit sensitive keys to git",
+        "Set production variables in Base44 dashboard",
+      ],
+    },
+    {
+      name: "Routing Patterns",
+      signature: "React Router Configuration",
+      description: "How routing works in Base44 projects with React Router",
+      parameters: [],
+      returns: "N/A",
+      example: `// Routes are automatically generated from pages/ directory
+// pages/Home.js → /
+// pages/About.js → /about
+// pages/UserProfile.js → /user-profile
+
+// Dynamic routes with parameters:
+import { useParams } from 'react-router-dom';
+
+function ProductDetail() {
+  const { id } = useParams(); // Get route parameter
+  
+  return <div>Product ID: {id}</div>;
+}
+
+// Navigation:
+import { Link, useNavigate } from 'react-router-dom';
+
+function MyComponent() {
+  const navigate = useNavigate();
+  
+  return (
+    <>
+      <Link to="/about">About</Link>
+      <button onClick={() => navigate('/products/123')}>
+        View Product
+      </button>
+    </>
+  );
+}`,
+      notes: [
+        "Pages are auto-routed based on filename",
+        "Use kebab-case for URLs (UserProfile.js → /user-profile)",
+        "Dynamic routes use :param syntax in route config",
+        "Use useNavigate() for programmatic navigation",
+      ],
+    },
+    {
+      name: "Asset Management",
+      signature: "Static Assets and Media",
+      description: "How to handle images, fonts, and other static assets in Base44 projects",
+      parameters: [],
+      returns: "N/A",
+      example: `// Option 1: Use UploadFile for user-uploaded content
+import { base44 } from '@/api/base44Client';
+
+const { file_url } = await base44.integrations.Core.UploadFile({
+  file: userImage
+});
+// Store file_url in entity: "https://storage.base44.com/uploads/abc123.png"
+
+// Option 2: Use public/ directory for static assets
+// Place files in public/ folder, reference with absolute paths:
+<img src="/logo.png" alt="Logo" />
+<link rel="stylesheet" href="/custom-fonts.css" />
+
+// Option 3: Import assets in components (bundled)
+import logoImage from './assets/logo.png';
+<img src={logoImage} alt="Logo" />
+
+// Best practices:
+// - User uploads → UploadFile (dynamic, stored in cloud)
+// - App assets (logo, icons) → public/ folder
+// - Component-specific assets → import in component`,
+      notes: [
+        "User uploads: Use UploadFile integration",
+        "Static assets: Use public/ folder",
+        "Component assets: Import directly",
+        "Uploaded files are automatically CDN-optimized",
+      ],
+    },
   ],
   notes: [
     "Pages must be flat (no subfolders) - use pages/MyPage.js, not pages/folder/MyPage.js",
     "Components can have subfolders for organization",
     "The User entity is built-in with id, full_name, email, and role fields",
     "All UI components from shadcn/ui are pre-installed",
+    "Routes are auto-generated from page filenames",
+    "Use UploadFile for user-uploaded content, public/ for static assets",
   ],
 };
 

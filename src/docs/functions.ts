@@ -190,6 +190,245 @@ Deno.serve(async (req) => {
         "Never hardcode secrets in code",
       ],
     },
+    {
+      name: "Webhook Verification",
+      signature: "Verifying Webhook Signatures",
+      description: "Securely verify webhook signatures from external services like Stripe, GitHub, etc.",
+      parameters: [],
+      returns: "N/A - Pattern examples",
+      example: `import Base44 from 'npm:@base44/sdk@0.8.6';
+import Stripe from 'npm:stripe@17.4.0';
+
+const base44 = Base44.createClientFromRequest;
+
+Deno.serve(async (req) => {
+  const client = base44(req);
+  
+  // Get webhook secret from environment
+  const webhookSecret = Deno.env.get("STRIPE_WEBHOOK_SECRET");
+  
+  if (!webhookSecret) {
+    return new Response(
+      JSON.stringify({ error: "Webhook secret not configured" }),
+      { status: 500, headers: { "Content-Type": "application/json" } }
+    );
+  }
+  
+  // Get raw body and signature
+  const body = await req.text();
+  const signature = req.headers.get("stripe-signature");
+  
+  if (!signature) {
+    return new Response(
+      JSON.stringify({ error: "Missing signature" }),
+      { status: 400, headers: { "Content-Type": "application/json" } }
+    );
+  }
+  
+  try {
+    // Verify webhook signature (use constructEventAsync for Deno)
+    const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY"));
+    const event = await stripe.webhooks.constructEventAsync(
+      body,
+      signature,
+      webhookSecret
+    );
+    
+    // Process verified webhook
+    switch (event.type) {
+      case 'payment_intent.succeeded':
+        const paymentIntent = event.data.object;
+        await client.entities.Order.create({
+          stripe_payment_id: paymentIntent.id,
+          amount: paymentIntent.amount / 100,
+          status: 'paid'
+        });
+        break;
+        
+      case 'customer.subscription.created':
+        const subscription = event.data.object;
+        await client.entities.Subscription.create({
+          stripe_subscription_id: subscription.id,
+          customer_id: subscription.customer,
+          status: subscription.status
+        });
+        break;
+    }
+    
+    return new Response(
+      JSON.stringify({ received: true }),
+      { status: 200, headers: { "Content-Type": "application/json" } }
+    );
+    
+  } catch (error) {
+    console.error('Webhook verification failed:', error);
+    return new Response(
+      JSON.stringify({ error: 'Invalid signature' }),
+      { status: 400, headers: { "Content-Type": "application/json" } }
+    );
+  }
+});`,
+      notes: [
+        "Always verify webhook signatures before processing",
+        "Use constructEventAsync (not constructEvent) for Stripe in Deno",
+        "Store webhook secrets in environment variables",
+        "Return 400 for invalid signatures, 200 for success",
+      ],
+    },
+    {
+      name: "CORS Configuration",
+      signature: "Handling Cross-Origin Requests",
+      description: "Configure CORS headers for frontend API calls",
+      parameters: [],
+      returns: "N/A - Pattern examples",
+      example: `import Base44 from 'npm:@base44/sdk@0.8.6';
+
+const base44 = Base44.createClientFromRequest;
+
+// CORS headers helper
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*", // Or specific domain: "https://myapp.com"
+  "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+  "Access-Control-Allow-Headers": "Content-Type, Authorization",
+  "Access-Control-Max-Age": "86400", // 24 hours
+};
+
+Deno.serve(async (req) => {
+  // Handle preflight OPTIONS request
+  if (req.method === "OPTIONS") {
+    return new Response(null, {
+      status: 204,
+      headers: corsHeaders
+    });
+  }
+  
+  const client = base44(req);
+  
+  try {
+    // Your function logic
+    const data = await client.entities.Product.list();
+    
+    return new Response(
+      JSON.stringify(data),
+      {
+        status: 200,
+        headers: {
+          ...corsHeaders,
+          "Content-Type": "application/json"
+        }
+      }
+    );
+  } catch (error) {
+    return new Response(
+      JSON.stringify({ error: error.message }),
+      {
+        status: 500,
+        headers: {
+          ...corsHeaders,
+          "Content-Type": "application/json"
+        }
+      }
+    );
+  }
+});
+
+// Restricted CORS (specific domain only)
+const restrictedCorsHeaders = {
+  "Access-Control-Allow-Origin": "https://myapp.com",
+  "Access-Control-Allow-Credentials": "true",
+  "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE",
+  "Access-Control-Allow-Headers": "Content-Type, Authorization",
+};`,
+      notes: [
+        "Always handle OPTIONS preflight requests",
+        "Use specific origins in production (not *)",
+        "Include CORS headers in all responses (success and error)",
+        "Set Access-Control-Allow-Credentials: true for cookies",
+      ],
+    },
+    {
+      name: "Request Validation",
+      signature: "Validating Request Data",
+      description: "Validate and sanitize incoming request data",
+      parameters: [],
+      returns: "N/A - Pattern examples",
+      example: `import Base44 from 'npm:@base44/sdk@0.8.6';
+
+const base44 = Base44.createClientFromRequest;
+
+Deno.serve(async (req) => {
+  const client = base44(req);
+  
+  // Validate HTTP method
+  if (req.method !== "POST") {
+    return new Response(
+      JSON.stringify({ error: "Method not allowed" }),
+      { status: 405, headers: { "Content-Type": "application/json" } }
+    );
+  }
+  
+  // Parse and validate JSON body
+  let body;
+  try {
+    body = await req.json();
+  } catch (error) {
+    return new Response(
+      JSON.stringify({ error: "Invalid JSON" }),
+      { status: 400, headers: { "Content-Type": "application/json" } }
+    );
+  }
+  
+  // Validate required fields
+  const { email, name, age } = body;
+  
+  if (!email || !name) {
+    return new Response(
+      JSON.stringify({ error: "Missing required fields: email, name" }),
+      { status: 400, headers: { "Content-Type": "application/json" } }
+    );
+  }
+  
+  // Validate email format
+  const emailRegex = /^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/;
+  if (!emailRegex.test(email)) {
+    return new Response(
+      JSON.stringify({ error: "Invalid email format" }),
+      { status: 400, headers: { "Content-Type": "application/json" } }
+    );
+  }
+  
+  // Validate data types and ranges
+  if (age !== undefined) {
+    if (typeof age !== 'number' || age < 0 || age > 150) {
+      return new Response(
+        JSON.stringify({ error: "Age must be between 0 and 150" }),
+        { status: 400, headers: { "Content-Type": "application/json" } }
+      );
+    }
+  }
+  
+  // Sanitize string inputs
+  const sanitizedName = name.trim().substring(0, 100);
+  
+  // Process validated data
+  const user = await client.entities.User.create({
+    email: email.toLowerCase().trim(),
+    name: sanitizedName,
+    age
+  });
+  
+  return new Response(
+    JSON.stringify(user),
+    { status: 201, headers: { "Content-Type": "application/json" } }
+  );
+});`,
+      notes: [
+        "Always validate HTTP method",
+        "Validate required fields before processing",
+        "Sanitize string inputs (trim, limit length)",
+        "Return 400 status for validation errors",
+      ],
+    },
   ],
   notes: [
     "Backend functions use the Deno.serve(async (req) => { ... }) pattern",
@@ -200,6 +439,9 @@ Deno.serve(async (req) => {
     "No local imports - each function is deployed independently",
     "Return Response objects, not plain strings",
     "Use constructEventAsync (not constructEvent) for Stripe webhooks in Deno",
+    "Always verify webhook signatures before processing",
+    "Handle CORS for frontend API calls",
+    "Validate all incoming request data",
   ],
 };
 
