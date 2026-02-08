@@ -52,8 +52,8 @@ const entitiesDocsData: Omit<DocTopic, "markdown"> = {
   methods: [
     {
       name: "list",
-      signature: "list(sort?: string, limit?: number): Promise<Array>",
-      description: "Retrieves all records with optional sorting and limiting",
+      signature: "list(sort?: string, limit?: number, skip?: number, fields?: string[]): Promise<Array>",
+      description: "Retrieves all records with optional sorting, limiting, pagination, and field selection",
       parameters: [
         {
           name: "sort",
@@ -65,7 +65,19 @@ const entitiesDocsData: Omit<DocTopic, "markdown"> = {
           name: "limit",
           type: "number",
           optional: true,
-          description: "Maximum records to return",
+          description: "Maximum records to return (max 5,000)",
+        },
+        {
+          name: "skip",
+          type: "number",
+          optional: true,
+          description: "Number of records to skip for pagination",
+        },
+        {
+          name: "fields",
+          type: "string[]",
+          optional: true,
+          description: "Array of field names to return (field selection)",
         },
       ],
       returns: "Promise<Array> - Array of entity records",
@@ -77,14 +89,24 @@ const todos = await base44.entities.Todo.list();
 // Get 10 most recent todos
 const recentTodos = await base44.entities.Todo.list('-created_date', 10);
 
-// Sort by title ascending
-const sortedTodos = await base44.entities.Todo.list('title');`,
-      notes: [],
+// Pagination - skip first 20, get next 10
+const page3 = await base44.entities.Todo.list('-created_date', 10, 20);
+
+// Field selection - only get specific fields
+const titles = await base44.entities.Todo.list(undefined, 100, 0, ['title', 'status']);
+
+// Combined: sorted, limited, paginated, with field selection
+const results = await base44.entities.Todo.list('-priority', 50, 100, ['title', 'priority', 'due_date']);`,
+      notes: [
+        "Maximum 5,000 items per request",
+        "Use skip parameter for offset-based pagination",
+        "Use fields parameter to reduce payload size",
+      ],
     },
     {
       name: "filter",
-      signature: "filter(query: object, sort?: string, limit?: number): Promise<Array>",
-      description: "Retrieves records matching specific criteria",
+      signature: "filter(query: object, sort?: string, limit?: number, skip?: number, fields?: string[]): Promise<Array>",
+      description: "Retrieves records matching specific criteria with optional sorting, limiting, pagination, and field selection",
       parameters: [
         {
           name: "query",
@@ -102,7 +124,19 @@ const sortedTodos = await base44.entities.Todo.list('title');`,
           name: "limit",
           type: "number",
           optional: true,
-          description: "Maximum records to return",
+          description: "Maximum records to return (max 5,000)",
+        },
+        {
+          name: "skip",
+          type: "number",
+          optional: true,
+          description: "Number of records to skip for pagination",
+        },
+        {
+          name: "fields",
+          type: "string[]",
+          optional: true,
+          description: "Array of field names to return (field selection)",
         },
       ],
       returns: "Promise<Array> - Array of matching entity records",
@@ -120,8 +154,29 @@ const myHighPriority = await base44.entities.Todo.filter({
 // Using comparison operators
 const recentItems = await base44.entities.Todo.filter({
   created_date: { $gte: '2024-01-01' }
-});`,
-      notes: [],
+});
+
+// Pagination with filter
+const page2 = await base44.entities.Todo.filter(
+  { status: 'active' },
+  '-created_date',
+  20,
+  20  // skip first 20
+);
+
+// Field selection with filter
+const summaries = await base44.entities.Todo.filter(
+  { status: 'active' },
+  undefined,
+  100,
+  0,
+  ['title', 'status', 'priority']  // only these fields
+);`,
+      notes: [
+        "Maximum 5,000 items per request",
+        "Use skip parameter for offset-based pagination",
+        "Use fields parameter to reduce payload size",
+      ],
     },
     {
       name: "create",
@@ -214,6 +269,85 @@ const updated = await base44.entities.Todo.update(todo.id, {
 
 await base44.entities.Todo.delete(todo.id);`,
       notes: [],
+    },
+    {
+      name: "deleteMany",
+      signature: "deleteMany(query: object): Promise<{ deletedCount: number }>",
+      description: "Bulk delete records matching a filter query",
+      parameters: [
+        {
+          name: "query",
+          type: "object",
+          optional: false,
+          description: "Filter criteria to match records for deletion",
+        },
+      ],
+      returns: "Promise<{ deletedCount: number }> - Number of records deleted",
+      example: `import { base44 } from '@/api/base44Client';
+
+// Delete all completed todos
+const result = await base44.entities.Todo.deleteMany({
+  completed: true
+});
+console.log(\`Deleted \${result.deletedCount} todos\`);
+
+// Delete old records
+await base44.entities.Log.deleteMany({
+  created_date: { $lt: '2024-01-01' }
+});
+
+// Delete by multiple conditions
+await base44.entities.Task.deleteMany({
+  status: 'archived',
+  created_by: user.email
+});`,
+      notes: [
+        "Use with caution - this permanently deletes multiple records",
+        "Returns the count of deleted records",
+        "Maximum 5,000 records can be deleted per request",
+      ],
+    },
+    {
+      name: "importEntities",
+      signature: "importEntities(data: Array<object>): Promise<{ imported: number, failed: number }>",
+      description: "Import multiple records from external data sources",
+      parameters: [
+        {
+          name: "data",
+          type: "Array<object>",
+          optional: false,
+          description: "Array of entity data objects to import",
+        },
+      ],
+      returns: "Promise<{ imported: number, failed: number }> - Import statistics",
+      example: `import { base44 } from '@/api/base44Client';
+
+// Import from CSV or external API
+const externalData = [
+  { title: "Task 1", priority: "high", source: "import" },
+  { title: "Task 2", priority: "medium", source: "import" },
+  { title: "Task 3", priority: "low", source: "import" }
+];
+
+const result = await base44.entities.Todo.importEntities(externalData);
+console.log(\`Imported: \${result.imported}, Failed: \${result.failed}\`);
+
+// Import with validation
+const csvData = await parseCsvFile(file);
+const importResult = await base44.entities.Product.importEntities(
+  csvData.map(row => ({
+    name: row.name,
+    price: parseFloat(row.price),
+    category: row.category,
+    imported_at: new Date().toISOString()
+  }))
+);`,
+      notes: [
+        "Maximum 5,000 records per import request",
+        "Failed records are skipped, successful ones are imported",
+        "Returns statistics about import success/failure",
+        "Useful for data migration and bulk imports",
+      ],
     },
     {
       name: "schema",

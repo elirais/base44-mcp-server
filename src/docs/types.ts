@@ -26,7 +26,7 @@ export interface DocTopic {
 
 export const ALL_TOPICS = [
   "entities", "auth", "integrations", "connectors",
-  "functions", "analytics", "best-practices",
+  "functions", "analytics", "app-logs", "best-practices",
   "project-structure", "getting-started",
 ] as const;
 

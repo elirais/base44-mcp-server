@@ -142,6 +142,441 @@ base44.auth.redirectToLogin('/dashboard');`,
       notes: [],
     },
     {
+      name: "loginWithProvider",
+      signature: "loginWithProvider(provider: string, nextUrl?: string): void",
+      description: "Initiate OAuth login with a third-party provider (Google, GitHub, etc.)",
+      parameters: [
+        {
+          name: "provider",
+          type: "string",
+          optional: false,
+          description: "OAuth provider name (e.g., 'google', 'github')",
+        },
+        {
+          name: "nextUrl",
+          type: "string",
+          optional: true,
+          description: "URL to redirect to after successful login",
+        },
+      ],
+      returns: "void",
+      example: `import { base44 } from '@/api/base44Client';
+
+// Login with Google
+base44.auth.loginWithProvider('google');
+
+// Login with GitHub and redirect to dashboard
+base44.auth.loginWithProvider('github', '/dashboard');
+
+// Login button component
+function LoginButtons() {
+  return (
+    <div>
+      <button onClick={() => base44.auth.loginWithProvider('google')}>
+        Sign in with Google
+      </button>
+      <button onClick={() => base44.auth.loginWithProvider('github')}>
+        Sign in with GitHub
+      </button>
+    </div>
+  );
+}`,
+      notes: [
+        "OAuth providers must be configured in Base44 platform settings",
+        "Redirects to provider's login page, then back to your app",
+      ],
+    },
+    {
+      name: "loginViaEmailPassword",
+      signature: "loginViaEmailPassword(email: string, password: string): Promise<User>",
+      description: "Login with email and password credentials",
+      parameters: [
+        {
+          name: "email",
+          type: "string",
+          optional: false,
+          description: "User's email address",
+        },
+        {
+          name: "password",
+          type: "string",
+          optional: false,
+          description: "User's password",
+        },
+      ],
+      returns: "Promise<User> - The authenticated user object",
+      example: `import { base44 } from '@/api/base44Client';
+import { useState } from 'react';
+
+function LoginForm() {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+
+  const handleLogin = async (e) => {
+    e.preventDefault();
+    try {
+      const user = await base44.auth.loginViaEmailPassword(email, password);
+      console.log('Logged in as:', user.email);
+      window.location.href = '/dashboard';
+    } catch (err) {
+      setError('Invalid email or password');
+    }
+  };
+
+  return (
+    <form onSubmit={handleLogin}>
+      <input
+        type="email"
+        value={email}
+        onChange={(e) => setEmail(e.target.value)}
+        placeholder="Email"
+      />
+      <input
+        type="password"
+        value={password}
+        onChange={(e) => setPassword(e.target.value)}
+        placeholder="Password"
+      />
+      {error && <p className="error">{error}</p>}
+      <button type="submit">Login</button>
+    </form>
+  );
+}`,
+      notes: [
+        "Email/password authentication must be enabled in platform settings",
+        "Returns user object on success, throws error on failure",
+      ],
+    },
+    {
+      name: "setToken",
+      signature: "setToken(token: string): void",
+      description: "Manually set authentication token (for custom auth flows)",
+      parameters: [
+        {
+          name: "token",
+          type: "string",
+          optional: false,
+          description: "JWT authentication token",
+        },
+      ],
+      returns: "void",
+      example: `import { base44 } from '@/api/base44Client';
+
+// Custom authentication flow
+async function customLogin(credentials) {
+  const response = await fetch('/api/custom-auth', {
+    method: 'POST',
+    body: JSON.stringify(credentials)
+  });
+  
+  const { token } = await response.json();
+  
+  // Set the token in Base44 SDK
+  base44.auth.setToken(token);
+  
+  // Now SDK calls will use this token
+  const user = await base44.auth.me();
+}`,
+      notes: [
+        "Use for custom authentication flows or SSO integrations",
+        "Token must be a valid JWT issued by Base44 platform",
+      ],
+    },
+    {
+      name: "register",
+      signature: "register(email: string, password: string, fullName: string): Promise<User>",
+      description: "Register a new user account with email and password",
+      parameters: [
+        {
+          name: "email",
+          type: "string",
+          optional: false,
+          description: "User's email address",
+        },
+        {
+          name: "password",
+          type: "string",
+          optional: false,
+          description: "User's password (must meet security requirements)",
+        },
+        {
+          name: "fullName",
+          type: "string",
+          optional: false,
+          description: "User's full name",
+        },
+      ],
+      returns: "Promise<User> - The newly created user object",
+      example: `import { base44 } from '@/api/base44Client';
+import { useState } from 'react';
+
+function RegisterForm() {
+  const [formData, setFormData] = useState({
+    email: '',
+    password: '',
+    fullName: ''
+  });
+  const [error, setError] = useState('');
+
+  const handleRegister = async (e) => {
+    e.preventDefault();
+    try {
+      const user = await base44.auth.register(
+        formData.email,
+        formData.password,
+        formData.fullName
+      );
+      console.log('Registered:', user.email);
+      window.location.href = '/onboarding';
+    } catch (err) {
+      setError(err.message || 'Registration failed');
+    }
+  };
+
+  return (
+    <form onSubmit={handleRegister}>
+      <input
+        type="text"
+        value={formData.fullName}
+        onChange={(e) => setFormData({...formData, fullName: e.target.value})}
+        placeholder="Full Name"
+      />
+      <input
+        type="email"
+        value={formData.email}
+        onChange={(e) => setFormData({...formData, email: e.target.value})}
+        placeholder="Email"
+      />
+      <input
+        type="password"
+        value={formData.password}
+        onChange={(e) => setFormData({...formData, password: e.target.value})}
+        placeholder="Password"
+      />
+      {error && <p className="error">{error}</p>}
+      <button type="submit">Register</button>
+    </form>
+  );
+}`,
+      notes: [
+        "Self-registration must be enabled in platform settings",
+        "Password must meet minimum security requirements",
+        "User is automatically logged in after successful registration",
+      ],
+    },
+    {
+      name: "verifyOtp",
+      signature: "verifyOtp(email: string, otp: string): Promise<User>",
+      description: "Verify one-time password (OTP) for email-based authentication",
+      parameters: [
+        {
+          name: "email",
+          type: "string",
+          optional: false,
+          description: "User's email address",
+        },
+        {
+          name: "otp",
+          type: "string",
+          optional: false,
+          description: "One-time password code sent to email",
+        },
+      ],
+      returns: "Promise<User> - The authenticated user object",
+      example: `import { base44 } from '@/api/base44Client';
+import { useState } from 'react';
+
+function OtpLoginForm() {
+  const [email, setEmail] = useState('');
+  const [otp, setOtp] = useState('');
+  const [otpSent, setOtpSent] = useState(false);
+
+  const sendOtp = async () => {
+    // Request OTP (implementation depends on your backend)
+    await fetch('/api/send-otp', {
+      method: 'POST',
+      body: JSON.stringify({ email })
+    });
+    setOtpSent(true);
+  };
+
+  const verifyOtp = async () => {
+    try {
+      const user = await base44.auth.verifyOtp(email, otp);
+      console.log('Logged in:', user.email);
+      window.location.href = '/dashboard';
+    } catch (err) {
+      alert('Invalid OTP code');
+    }
+  };
+
+  return (
+    <div>
+      <input
+        type="email"
+        value={email}
+        onChange={(e) => setEmail(e.target.value)}
+        placeholder="Email"
+      />
+      {!otpSent ? (
+        <button onClick={sendOtp}>Send OTP</button>
+      ) : (
+        <>
+          <input
+            type="text"
+            value={otp}
+            onChange={(e) => setOtp(e.target.value)}
+            placeholder="Enter OTP code"
+          />
+          <button onClick={verifyOtp}>Verify</button>
+        </>
+      )}
+    </div>
+  );
+}`,
+      notes: [
+        "OTP authentication must be enabled in platform settings",
+        "OTP codes typically expire after 10 minutes",
+        "Use for passwordless authentication flows",
+      ],
+    },
+    {
+      name: "resetPasswordRequest",
+      signature: "resetPasswordRequest(email: string): Promise<void>",
+      description: "Request a password reset email for the user",
+      parameters: [
+        {
+          name: "email",
+          type: "string",
+          optional: false,
+          description: "User's email address",
+        },
+      ],
+      returns: "Promise<void>",
+      example: `import { base44 } from '@/api/base44Client';
+import { useState } from 'react';
+
+function ForgotPasswordForm() {
+  const [email, setEmail] = useState('');
+  const [sent, setSent] = useState(false);
+
+  const handleReset = async (e) => {
+    e.preventDefault();
+    try {
+      await base44.auth.resetPasswordRequest(email);
+      setSent(true);
+    } catch (err) {
+      alert('Failed to send reset email');
+    }
+  };
+
+  if (sent) {
+    return (
+      <div>
+        <p>Password reset email sent to {email}</p>
+        <p>Check your inbox and follow the instructions.</p>
+      </div>
+    );
+  }
+
+  return (
+    <form onSubmit={handleReset}>
+      <input
+        type="email"
+        value={email}
+        onChange={(e) => setEmail(e.target.value)}
+        placeholder="Enter your email"
+      />
+      <button type="submit">Reset Password</button>
+    </form>
+  );
+}`,
+      notes: [
+        "Sends email with password reset link",
+        "Link expires after a configured time period",
+        "User must click link and set new password",
+      ],
+    },
+    {
+      name: "changePassword",
+      signature: "changePassword(currentPassword: string, newPassword: string): Promise<void>",
+      description: "Change the current user's password",
+      parameters: [
+        {
+          name: "currentPassword",
+          type: "string",
+          optional: false,
+          description: "User's current password",
+        },
+        {
+          name: "newPassword",
+          type: "string",
+          optional: false,
+          description: "New password (must meet security requirements)",
+        },
+      ],
+      returns: "Promise<void>",
+      example: `import { base44 } from '@/api/base44Client';
+import { useState } from 'react';
+
+function ChangePasswordForm() {
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [error, setError] = useState('');
+
+  const handleChange = async (e) => {
+    e.preventDefault();
+    
+    if (newPassword !== confirmPassword) {
+      setError('Passwords do not match');
+      return;
+    }
+
+    try {
+      await base44.auth.changePassword(currentPassword, newPassword);
+      alert('Password changed successfully');
+      setCurrentPassword('');
+      setNewPassword('');
+      setConfirmPassword('');
+    } catch (err) {
+      setError('Current password is incorrect');
+    }
+  };
+
+  return (
+    <form onSubmit={handleChange}>
+      <input
+        type="password"
+        value={currentPassword}
+        onChange={(e) => setCurrentPassword(e.target.value)}
+        placeholder="Current Password"
+      />
+      <input
+        type="password"
+        value={newPassword}
+        onChange={(e) => setNewPassword(e.target.value)}
+        placeholder="New Password"
+      />
+      <input
+        type="password"
+        value={confirmPassword}
+        onChange={(e) => setConfirmPassword(e.target.value)}
+        placeholder="Confirm New Password"
+      />
+      {error && <p className="error">{error}</p>}
+      <button type="submit">Change Password</button>
+    </form>
+  );
+}`,
+      notes: [
+        "User must be authenticated to change password",
+        "Current password must be correct",
+        "New password must meet security requirements",
+      ],
+    },
+    {
       name: "User.list",
       signature: "User.list(): Promise<Array<User>>",
       description: "List all users (admin only)",

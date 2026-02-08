@@ -3,7 +3,7 @@ import { allDocs } from "../src/docs/index.js";
 import { ALL_TOPICS } from "../src/docs/types.js";
 
 describe("docs", () => {
-  it("should have all 9 topics", () => {
+  it("should have all 10 topics", () => {
     const expectedTopics = [
       "entities",
       "auth",
@@ -11,6 +11,7 @@ describe("docs", () => {
       "connectors",
       "functions",
       "analytics",
+      "app-logs",
       "best-practices",
       "project-structure",
       "getting-started",
@@ -22,11 +23,11 @@ describe("docs", () => {
       expect(docTopics).toContain(topic);
     }
 
-    expect(allDocs).toHaveLength(9);
+    expect(allDocs).toHaveLength(10);
   });
 
   it("should match ALL_TOPICS constant", () => {
-    expect(ALL_TOPICS).toHaveLength(9);
+    expect(ALL_TOPICS).toHaveLength(10);
     const docTopics = allDocs.map((d) => d.topic);
     for (const topic of ALL_TOPICS) {
       expect(docTopics).toContain(topic);
@@ -85,6 +86,8 @@ describe("docs", () => {
       "bulkCreate",
       "update",
       "delete",
+      "deleteMany",
+      "importEntities",
       "schema",
       "subscribe",
     ];
@@ -152,5 +155,33 @@ describe("docs", () => {
 
     const trackMethod = analyticsDoc!.methods.find((m) => m.name === "track");
     expect(trackMethod).toBeDefined();
+  });
+
+  it("app-logs doc should have logUserInApp method", () => {
+    const appLogsDoc = allDocs.find((d) => d.topic === "app-logs");
+    expect(appLogsDoc).toBeDefined();
+
+    const methodNames = appLogsDoc!.methods.map((m) => m.name);
+    expect(methodNames).toContain("logUserInApp");
+  });
+
+  it("auth doc should have new v0.8.18 methods", () => {
+    const authDoc = allDocs.find((d) => d.topic === "auth");
+    expect(authDoc).toBeDefined();
+
+    const methodNames = authDoc!.methods.map((m) => m.name);
+    const newMethods = [
+      "loginWithProvider",
+      "loginViaEmailPassword",
+      "setToken",
+      "register",
+      "verifyOtp",
+      "resetPasswordRequest",
+      "changePassword",
+    ];
+
+    for (const name of newMethods) {
+      expect(methodNames).toContain(name);
+    }
   });
 });
