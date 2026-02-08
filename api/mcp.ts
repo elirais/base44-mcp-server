@@ -1,60 +1,40 @@
-import { SSEServerTransport } from "@modelcontextprotocol/sdk/server/sse.js";
+import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
 import createServer from "../src/index.js";
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-
-export const config = {
-  runtime: 'nodejs',
-  maxDuration: 60, // 60 seconds for Hobby plan
-};
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
     res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, DELETE, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, mcp-session-id');
     return res.status(200).end();
   }
 
   // Set CORS headers for all responses
   res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, DELETE, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, mcp-session-id');
 
   try {
-    // Create MCP server instance
+    // Stateless transport for serverless — each request is independent
+    const transport = new StreamableHTTPServerTransport({
+      sessionIdGenerator: undefined,
+    });
+
+    // Create MCP server and connect transport
     const server = createServer();
-    
-    // Create SSE transport with the response object
-    const transport = new SSEServerTransport('/message', res);
-    
-    // Connect server to transport
     await server.connect(transport);
-    
-    // Handle GET request for SSE endpoint
-    if (req.method === 'GET') {
-      // SSE connection established, keep alive
-      return;
-    }
-    
-    // Handle POST request with MCP message
-    if (req.method === 'POST') {
-      const message = req.body;
-      await transport.handlePostMessage(message, res);
-      return;
-    }
-    
-    // Method not allowed
-    res.status(405).json({ error: 'Method not allowed' });
-    
+
+    // Delegate to the transport (handles GET, POST, DELETE)
+    await transport.handleRequest(req, res, req.body);
   } catch (error: any) {
     console.error('MCP Server Error:', error);
-    
-    // Don't send response if headers already sent
+
     if (!res.headersSent) {
       res.status(500).json({
         error: 'Internal server error',
-        message: error?.message || 'Unknown error'
+        message: error?.message || 'Unknown error',
       });
     }
   }
