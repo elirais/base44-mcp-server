@@ -1,7 +1,7 @@
 runtime: "typescript"
 version: "1.0.0"
 description: "MCP server for Base44 SDK documentation - Community project"
-author: "Community Project"
+author: "Leonid Rise"
 homepage: "https://doc-sdk.base44.app"
 license: "MIT"
 

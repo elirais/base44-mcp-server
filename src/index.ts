@@ -6,7 +6,8 @@ import { listTopics } from "./tools/list-topics.js";
 import { allDocs } from "./docs/index.js";
 import { ALL_TOPICS } from "./docs/types.js";
 
-export function createServer() {
+// Default export for Smithery CLI
+export default function createServer({ config = {} } = {}) {
   const server = new McpServer({
     name: "Base44 SDK Docs",
     version: "1.0.0",
@@ -85,11 +86,5 @@ export function createServer() {
     })
   );
 
-  return server;
-}
-
-
-// Default export for Smithery CLI
-export default function() {
-  return createServer();
+  return server.server;
 }
