@@ -1,4 +1,4 @@
-import { DocTopic } from "../types.js";
+import { DocTopic } from "./types.js";
 
 function renderMarkdown(doc: DocTopic): string {
   let md = `# ${doc.title}\n\n`;
