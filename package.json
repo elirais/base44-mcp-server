@@ -41,7 +41,7 @@
     "build:stdio": "tsc && chmod +x build/stdio.js",
     "test": "vitest run",
     "test:watch": "vitest",
-    "prepublishOnly": "npm test && npm run build"
+    "prepublishOnly": "npm test && npm run build:stdio"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.17.3",

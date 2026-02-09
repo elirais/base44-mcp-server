@@ -61,5 +61,12 @@ capabilities:
 requirements:
   node: ">=20.0.0"
 
-# No environment variables or configuration needed
-config: {}
+# Start command for stdio-based clients (Claude Desktop, etc.)
+startCommand:
+  type: stdio
+  configSchema:
+    type: object
+    properties: {}
+  commandFunction: |-
+    (config) => ({ command: 'node', args: ['./build/stdio.js'] })
+  exampleConfig: {}
